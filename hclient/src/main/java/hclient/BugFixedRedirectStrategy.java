@@ -37,16 +37,19 @@ public class BugFixedRedirectStrategy extends DefaultRedirectStrategy {
 	
 	@Override
     protected URI createLocationURI(final String location) throws ProtocolException {
+		
+		String urlString = location.toString().replace(" ", "%20");
+		
     	URI uri = null;
         try {
-        	uri = new URI( location );
+        	uri = new URI( urlString );
         } catch (URISyntaxException ex) {
     		try {
     			
-    			String prefix = location.substring(0, location.indexOf('/', 7) + 1);
-    			String suffix = URLEncoder.encode( location.substring( location.indexOf('/', 7) + 1), "UTF-8" ) ;
+    			String prefix = location.substring(0, urlString.indexOf('/', 7) + 1);
+    			String suffix = URLEncoder.encode( urlString.substring( urlString.indexOf('/', 7) + 1), "UTF-8" ) ;
     			// suffix = suffix.replace("%2F", "/");
-    			//String suffix = location.substring( location.indexOf('/', 7) + 1) ;
+    			//String suffix = urlString.substring( urlString.indexOf('/', 7) + 1) ;
     			//suffix = suffix.replace(" ", "%20");
 				uri = new URI( prefix + suffix );
 			} catch (URISyntaxException | UnsupportedEncodingException e) {

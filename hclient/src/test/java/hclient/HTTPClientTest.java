@@ -3,16 +3,8 @@ package hclient;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.zip.ZipException;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.w3c.dom.Node;
@@ -30,13 +22,20 @@ public class HTTPClientTest {
 
 	@Test
 	public void testGetZip() throws IOException, URISyntaxException {
-		SimpleResponse response = HTTPClient.getInstance().get( "http://www.dzone.com/sites/all/files/Log4jExample4.zip" );
+		SimpleResponse response = client.get( "http://www.dzone.com/sites/all/files/Log4jExample4.zip" );
 		Assert.assertEquals(response.getContentType(), "application/zip");
 	}
 	
 	@Test
+	public void testGithub() throws IOException, URISyntaxException {
+		WebDocument document = client.getDocument( "https://github.com/antlr/antlr4" );
+		String updatedAt = document.jsoup("time.updated").attr("datetime");
+		Assert.assertNotNull( updatedAt );
+	}
+
+	@Test
 	public void testGetReddit() throws Exception {
-		WebDocument document = HTTPClient.getInstance().getDocument( "http://www.reddit.com/r/programming/", 0 );
+		WebDocument document = client.getDocument( "https://www.reddit.com/r/programming/", 0 );
 		List<Node> titles = document.evaluateXPath("//a[contains(@class, 'title')]/text()");
 		Assert.assertTrue( titles.size() > 0 );
 	}
