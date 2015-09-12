@@ -259,7 +259,7 @@ public class HTTPClient {
 		mapper.writeValue( new File( "cookies.json"), getCookieStore().getCookies());
 	}
     
-    public WebDocument getXML(String url, String referer, long cacheRefreshPeriod ) throws Exception {
+    public WebDocument getXML(String url, String referer, long cacheRefreshPeriod ) throws IOException {
     	SimpleResponse contents = get( url, referer, cacheRefreshPeriod );
     	WebDocument document = new WebDocument( url, contents.getStringContents() );
     	document.setXml( true );
