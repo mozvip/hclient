@@ -1,11 +1,5 @@
 package hclient;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-
-import org.apache.http.ProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
@@ -25,6 +19,7 @@ public class BugFixedRedirectStrategy extends DefaultRedirectStrategy {
     /**
      * @since 4.2
      */
+    @Override
     protected boolean isRedirectable(final String method) {
         for (final String m: REDIRECT_METHODS) {
             if (m.equalsIgnoreCase(method)) {
@@ -32,31 +27,6 @@ public class BugFixedRedirectStrategy extends DefaultRedirectStrategy {
             }
         }
         return false;
-    }
-	
-	
-	@Override
-    protected URI createLocationURI(final String location) throws ProtocolException {
-		
-		String urlString = location.toString().replace(" ", "%20");
-		
-    	URI uri = null;
-        try {
-        	uri = new URI( urlString );
-        } catch (URISyntaxException ex) {
-    		try {
-    			
-    			String prefix = location.substring(0, urlString.indexOf('/', 7) + 1);
-    			String suffix = URLEncoder.encode( urlString.substring( urlString.indexOf('/', 7) + 1), "UTF-8" ) ;
-    			// suffix = suffix.replace("%2F", "/");
-    			//String suffix = urlString.substring( urlString.indexOf('/', 7) + 1) ;
-    			//suffix = suffix.replace(" ", "%20");
-				uri = new URI( prefix + suffix );
-			} catch (URISyntaxException | UnsupportedEncodingException e) {
-				throw new ProtocolException(e.getMessage(), e);
-			}
-        }
-    	return uri;
     }
 
 }

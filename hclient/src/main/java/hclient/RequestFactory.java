@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.slf4j.Logger;
@@ -46,8 +47,20 @@ public class RequestFactory {
 	}
 
 	public static HttpGet getGet( URL url, String referer ) {
-
-		String urlString = url.toString().replace(" ", "%20");
+		
+		String urlString = url.toString().replace(" ", "+");		
+		String[] elements = urlString.split("/");
+		if (elements.length>0) {
+			for (int i=2;i<elements.length; i++) {
+				elements[i] = elements[i].replace(":", "%3A");
+				elements[i] = elements[i].replace("[", "%5B");
+				elements[i] = elements[i].replace("]", "%5D");
+				elements[i] = elements[i].replace("&", "%26");
+				elements[i] = elements[i].replace("'", "%27");		
+				elements[i] = elements[i].replaceAll(" ", "+");
+			}
+			urlString = StringUtils.join( elements, '/');
+		}		
 		
 		HttpGet httpget = new HttpGet( urlString );
     	httpget.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
