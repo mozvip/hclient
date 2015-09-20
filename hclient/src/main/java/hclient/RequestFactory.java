@@ -48,7 +48,7 @@ public class RequestFactory {
 	}
 	
 	public static URI getURI( String url ) throws URISyntaxException {
-		String urlString = url.replace(" ", "+");		
+		String urlString = url.replaceAll("\\s", "%20");		
 		String[] elements = urlString.split("/");
 		if (elements.length>0) {
 			for (int i=2;i<elements.length; i++) {
@@ -57,7 +57,6 @@ public class RequestFactory {
 				elements[i] = elements[i].replace("]", "%5D");
 				elements[i] = elements[i].replace("&", "%26");
 				elements[i] = elements[i].replace("'", "%27");		
-				elements[i] = elements[i].replaceAll(" ", "+");
 			}
 			urlString = StringUtils.join( elements, '/');
 		}		
