@@ -287,7 +287,12 @@ public class HTTPClient {
 	        // Get the value
 	
 			URL uURL = new URL( url );
-	    	final HttpGet httpget = RequestFactory.getGet( uURL, referer );
+	    	HttpGet httpget;
+			try {
+				httpget = RequestFactory.getGet( uURL, referer );
+			} catch (URISyntaxException e) {
+				throw new IOException(e.getMessage(), e);
+			}
 	    	if (uURL.getHost().contains("nzbindex.nl")) {
 	    		// hack for https://issues.apache.org/jira/browse/HTTPCLIENT-1550
 	    		httpget.setHeader("Accept-Encoding", "gzip");
@@ -335,27 +340,27 @@ public class HTTPClient {
 
     }
     
-    public SimpleResponse get( String url ) throws IOException, URISyntaxException {
+    public SimpleResponse get( String url ) throws IOException {
     	return get( url, null, 0 );
     }
    
-    public SimpleResponse get( String url, long cacheRefreshPeriod ) throws IOException, URISyntaxException {
+    public SimpleResponse get( String url, long cacheRefreshPeriod ) throws IOException {
     	return get( url, null, cacheRefreshPeriod );
     }
     
-    public SimpleResponse get( String url, String referer ) throws IOException, URISyntaxException {
+    public SimpleResponse get( String url, String referer ) throws IOException {
     	return get( url, referer, 0 );
     }
      
-    public Path download( String url ) throws IOException, URISyntaxException {
+    public Path download( String url ) throws IOException {
     	return download( url, null, null );
     }
        
-    public Path download( String url, String referer ) throws IOException, URISyntaxException {
+    public Path download( String url, String referer ) throws IOException {
     	return download(url, referer, null);
     }
 
-    public Path download( String url, String referer, Path destinationFolder ) throws IOException, URISyntaxException {
+    public Path download( String url, String referer, Path destinationFolder ) throws IOException {
     	return download( url, referer, destinationFolder, 0 );
     }
    
@@ -406,7 +411,12 @@ public class HTTPClient {
     
     public boolean downloadImage( URL url, File destinationFile, int minimumSize ) throws IOException {
     	    	
-		HttpGet httpget = RequestFactory.getGet( url, null );
+		HttpGet httpget;
+		try {
+			httpget = RequestFactory.getGet( url, null );
+		} catch (URISyntaxException e) {
+			throw new IOException(e.getMessage(), e);
+		}
 		HttpResponse response = apacheClient.execute(httpget);
 		HttpEntity entity = response.getEntity();
 		

@@ -1,5 +1,9 @@
 package hclient;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.apache.http.ProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
@@ -28,5 +32,16 @@ public class BugFixedRedirectStrategy extends DefaultRedirectStrategy {
         }
         return false;
     }
+    
+    /**
+     * @since 4.1
+     */
+    protected URI createLocationURI(final String location) throws ProtocolException {
+        try {
+			return RequestFactory.getURI( location );
+		} catch (URISyntaxException e) {
+			throw new ProtocolException( e.getMessage(), e );
+		}
+    }    
 
 }

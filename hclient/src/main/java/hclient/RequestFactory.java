@@ -1,6 +1,7 @@
 package hclient;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,10 +46,9 @@ public class RequestFactory {
 
     	return httppost;
 	}
-
-	public static HttpGet getGet( URL url, String referer ) {
-		
-		String urlString = url.toString().replace(" ", "+");		
+	
+	public static URI getURI( String url ) throws URISyntaxException {
+		String urlString = url.replace(" ", "+");		
 		String[] elements = urlString.split("/");
 		if (elements.length>0) {
 			for (int i=2;i<elements.length; i++) {
@@ -62,7 +62,11 @@ public class RequestFactory {
 			urlString = StringUtils.join( elements, '/');
 		}		
 		
-		HttpGet httpget = new HttpGet( urlString );
+		return new URI( urlString );
+	}
+
+	public static HttpGet getGet( URL url, String referer ) throws URISyntaxException {
+		HttpGet httpget = new HttpGet( getURI( url.toString() ) );
     	httpget.setHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
     	httpget.setHeader("Accept-Language", "en-US,en;q=0.5");
     	if (referer != null) {
