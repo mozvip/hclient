@@ -59,6 +59,9 @@ public class RequestFactory {
 				elements[i] = elements[i].replace("'", "%27");		
 			}
 			urlString = StringUtils.join( elements, '/');
+			if (url.endsWith("/")) {
+				urlString += "/";
+			}
 		}		
 		
 		return new URI( urlString );
