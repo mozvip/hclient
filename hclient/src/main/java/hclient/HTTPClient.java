@@ -82,7 +82,7 @@ import hclient.json.SerializedCookie;
 
 public class HTTPClient {
 	
-	private final static Logger logger = LoggerFactory.getLogger( HTTPClient.class );
+	private final static Logger LOGGER = LoggerFactory.getLogger( HTTPClient.class );
 	private final static String USER_AGENT = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0";
 	private final static int TIMEOUT = 60 * 1000;
 
@@ -171,7 +171,7 @@ public class HTTPClient {
 			});			
 			builder.setSSLSocketFactory( sslsf );
 		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
+			LOGGER.error(e.getMessage(), e);
 		}
 
 		return builder.build();
@@ -212,11 +212,11 @@ public class HTTPClient {
 			try {
 				readCookies(cookiesFile);
 			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+				LOGGER.error(e.getMessage(), e);
 				try {
 					Files.deleteIfExists( cookiesFile );
 				} catch (IOException eDelete) {
-					logger.error(e.getMessage(), eDelete);
+					LOGGER.error(e.getMessage(), eDelete);
 				}
 			}
 		}
@@ -226,7 +226,7 @@ public class HTTPClient {
 		        try {
 					serializeCookies();
 				} catch (IOException e) {
-					logger.error(e.getMessage(), e);
+					LOGGER.error(e.getMessage(), e);
 				}
 		    }
 		});
@@ -301,7 +301,7 @@ public class HTTPClient {
 	    	HttpContext context = new BasicHttpContext();
 
 	    	if (httpget == null) {
-	    		logger.error(String.format("Request null for URL %s", url.toString()));
+	    		LOGGER.error(String.format("Request null for URL %s", url.toString()));
 	    		return null;
 	    	}
 
@@ -311,15 +311,21 @@ public class HTTPClient {
 	
 				ContentType ct = ContentType.getOrDefault( entity );
 	
-				String fileName;
+				String fileName = null;
 				Header contentDisposition = response.getLastHeader("Content-Disposition");
 				if (contentDisposition != null) {
 					List<String> groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=\"(.*)\"");
 					if (groups == null) {
 						groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=(.*)");
 					}
-					fileName = groups.get(0);
-				} else {
+					if (groups != null && groups.size() > 0) {
+						fileName = groups.get(0);
+					} else {
+						LOGGER.error("Unsupported Content-Disposition format : {}", contentDisposition.getValue());
+					}
+				}
+				
+				if (fileName == null) {
 					fileName = FileNameUtils.sanitizeFileName( url.substring( url.lastIndexOf('/') + 1) );
 				}
 						
