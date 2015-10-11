@@ -36,6 +36,7 @@ public class BugFixedRedirectStrategy extends DefaultRedirectStrategy {
     /**
      * @since 4.1
      */
+    @Override
     protected URI createLocationURI(final String location) throws ProtocolException {
         try {
 			return RequestFactory.getURI( location );
