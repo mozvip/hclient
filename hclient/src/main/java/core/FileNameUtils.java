@@ -4,6 +4,7 @@ public class FileNameUtils {
 	
 	public static String sanitizeFileName( String fileName ) {
 		String cleanFileName = fileName.replace('?', '¿');
+		cleanFileName = cleanFileName.replace('é', 'e');	// FIXME : replace all accents 
 		cleanFileName = cleanFileName.replaceAll("[\\|\\:\\*/\"]", " ");
 		cleanFileName = cleanFileName.replaceAll("\\s+", " ").trim();
 		while (cleanFileName.endsWith(".")) {
