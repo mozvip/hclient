@@ -51,7 +51,6 @@ import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -78,6 +77,7 @@ import core.FileNameUtils;
 import core.RegExp;
 import core.WebDocument;
 import hclient.cache.ClientCache;
+import hclient.cookies.CustomCookieStore;
 import hclient.json.SerializedCookie;
 
 public class HTTPClient {
@@ -90,7 +90,7 @@ public class HTTPClient {
 
 	private CloseableHttpClient apacheClient;
 
-	private CookieStore cookieStore = new BasicCookieStore();
+	private CustomCookieStore cookieStore = new CustomCookieStore();
 		
 	public static final long REFRESH_ONE_HOUR	= 60 * 60 * 1000;
 	public static final long REFRESH_ONE_DAY	= REFRESH_ONE_HOUR * 24;
@@ -103,6 +103,10 @@ public class HTTPClient {
 	
 	public static HTTPClient getInstance() {
 		return SingletonHolder.instance;
+	}
+	
+	public void setNonExpiringCookieDomain( String domain ) {
+		cookieStore.setNonExpiring(domain);
 	}
 	
 	public void addCookie( BasicClientCookie cookie ) {		
@@ -370,9 +374,10 @@ public class HTTPClient {
     	return download( url, referer, destinationFolder, 0 );
     }
    
-    public Path downloadToFile( String url, String referer, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
+    public String downloadToFile( String url, String referer, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
 		SimpleResponse response = get( url, referer, cacheRefreshPeriod );
-		return createFile(response, destinationFile);
+		createFile(response, destinationFile);
+		return response.getContentType();
     }
 
 	private Path createFile(SimpleResponse response, Path destinationFile) throws IOException {
@@ -565,7 +570,7 @@ public class HTTPClient {
 		Map<String, Object> paramsMap = new HashMap<String, Object>();
 		if (parameters != null) {
 			for (String param : parameters) {
-				String[] keyVal = RegExp.parseGroups( param, "([#%\\w]+)=(.*)" );
+				String[] keyVal = RegExp.parseGroups( param, "([#%\\[\\]\\w]+)=(.*)" );
 				paramsMap.put( keyVal[0], keyVal[1] != null ? keyVal[1] : "" );
 			}
 		}
@@ -583,13 +588,16 @@ public class HTTPClient {
 				String value = input.attr("value");
 				if (!paramsMap.containsKey( name )) {
 					if (StringUtils.isNotEmpty( value )) {
-							paramsMap.put( name, value );
+						paramsMap.put( name, value );
 					}
 				}
 			}
 		}
 
 		String url = jsoupFormElement.baseUri();
+		if (url.endsWith("/")) {
+			url = url.substring(0, url.length() - 1);
+		}
 
 		String method = jsoupFormElement.attr("method");
 		SimpleResponse response = null;

@@ -97,7 +97,7 @@ public class SimpleResponse implements Serializable {
 	}
 	
 	public String getLastRedirectLocationURL() throws MalformedURLException {
-		return lastRedirectLocation.toString();
+		return lastRedirectLocation != null ? lastRedirectLocation.toString() : null;
 	}
 
 	public void setLastRedirectLocation(URI lastRedirectLocation) {
