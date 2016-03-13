@@ -6,7 +6,6 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,11 +28,11 @@ public class SimpleResponse implements Serializable {
 	private String fileName;
 	private URI lastRedirectLocation;
 	
-	private URL url;
+	private String url;
 
 	private List<URI> redirectLocations;
 
-	public SimpleResponse( URL url, int statusCode, byte[] byteContents, String fileName, String contentType, Charset charset) {
+	public SimpleResponse( String url, int statusCode, byte[] byteContents, String fileName, String contentType, Charset charset) {
 		this.url = url;
 		this.code = statusCode;
 		this.byteContents = byteContents;

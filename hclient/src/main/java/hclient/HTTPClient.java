@@ -281,11 +281,9 @@ public class HTTPClient {
     
     public SimpleResponse get( String url, String referer, long cacheRefreshPeriod ) throws IOException {
 
-		String key = url;
-
 		SimpleResponse cachedContent = null;
 		if (cacheRefreshPeriod > 0) {
-			cachedContent = (SimpleResponse) cache.getFromCache(key);
+			cachedContent = (SimpleResponse) cache.getFromCache(url);
 		}
 		if (cachedContent == null) {
 	        // Get the value
@@ -334,12 +332,12 @@ public class HTTPClient {
 				}
 						
 				int statusCode = response.getStatusLine().getStatusCode();
-				cachedContent = new SimpleResponse( uURL, statusCode, EntityUtils.toByteArray(entity), fileName, ct.getMimeType(), ct.getCharset() );
+				cachedContent = new SimpleResponse( url, statusCode, EntityUtils.toByteArray(entity), fileName, ct.getMimeType(), ct.getCharset() );
 	
 				cachedContent.setRedirectLocations( (RedirectLocations) context.getAttribute( DefaultRedirectStrategy.REDIRECT_LOCATIONS) );
 				
 				if ( statusCode == 200 ) {
-					cache.putInCache( key, cachedContent, cacheRefreshPeriod );
+					cache.putInCache( url, cachedContent, cacheRefreshPeriod );
 				}
 			} finally {
 				httpget.releaseConnection();
@@ -459,14 +457,14 @@ public class HTTPClient {
     }
     
     public SimpleResponse post( String url, String referer, Map<String, Object> params) throws IOException {
-    	return post( new URL(url), referer != null ? new URL( referer ) : null, params, false );
+    	return post( url, referer != null ? new URL( referer ) : null, params, false );
     }
 
     public SimpleResponse post( String url, String referer, Map<String, Object> params, boolean ajax) throws IOException {
-    	return post( new URL(url), referer != null ? new URL( referer ) : null, params, ajax );
+    	return post( url, referer != null ? new URL( referer ) : null, params, ajax );
     }
 
-    public SimpleResponse post( URL url, URL referer, Map<String, Object> params, boolean ajax ) throws IOException {
+    public SimpleResponse post( String url, URL referer, Map<String, Object> params, boolean ajax ) throws IOException {
 
         List <NameValuePair> nvps = new ArrayList <NameValuePair>();
     	for (Iterator<Map.Entry<String, Object>> iterator = params.entrySet().iterator(); iterator.hasNext();) {
@@ -482,7 +480,7 @@ public class HTTPClient {
     	return post( url, referer, new UrlEncodedFormEntity(nvps, Charset.forName("UTF-8")), ajax );
     }
     
-    protected SimpleResponse post( URL url, URL referer, AbstractHttpEntity postEntity, boolean ajax ) throws IOException {
+    protected SimpleResponse post( String url, URL referer, AbstractHttpEntity postEntity, boolean ajax ) throws IOException {
     	HttpPost post = RequestFactory.getPost(url, referer);
         post.setEntity( postEntity );
 
@@ -554,14 +552,14 @@ public class HTTPClient {
 	}
 	
 	public SimpleResponse post(String url, String referer, String... params) throws IOException {
-		return post( new URL( url ), referer != null ? new URL(referer) : null, false, params );
+		return post( url, referer, false, params );
 	}
 
 	public SimpleResponse postAjax(String url, String referer, String... params) throws IOException {
-		return post( new URL( url ), referer != null ? new URL(referer) : null, true, params );
+		return post( url, referer, true, params );
 	}
 
-	protected SimpleResponse post(URL url, URL referer, boolean ajax, String... parameters) throws IOException {
+	protected SimpleResponse post(String url, String referer, boolean ajax, String... parameters) throws IOException {
 		Map<String, Object> paramsMap = getParamsMap( parameters );
 		return post(url, referer, paramsMap, ajax);
 	}
@@ -620,11 +618,7 @@ public class HTTPClient {
 		return response;
 	}
 	
-	public SimpleResponse postJSON(String url, String referer, String... parameters) throws ClientProtocolException, UnsupportedEncodingException, IOException {
-		return postJSON(new URL(url), referer != null ? new URL(referer) : null, parameters);
-	}
-
-	public SimpleResponse postJSON(URL url, URL referer, String... parameters) throws ClientProtocolException, UnsupportedEncodingException, IOException {
+	public SimpleResponse postJSON(String url, URL referer, String... parameters) throws ClientProtocolException, UnsupportedEncodingException, IOException {
 
 		Map<String, Object> paramsMap = getParamsMap( parameters );
 		ObjectMapper mapper = new ObjectMapper();
