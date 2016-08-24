@@ -315,7 +315,7 @@ public class HTTPClient {
 	
 				String fileName = null;
 				Header contentDisposition = response.getLastHeader("Content-Disposition");
-				if (contentDisposition != null) {
+				if (contentDisposition != null && StringUtils.isNotBlank(contentDisposition.getValue())) {
 					List<String> groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=\"(.*)\"");
 					if (groups == null) {
 						groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=(.*)");
