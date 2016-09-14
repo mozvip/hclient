@@ -12,6 +12,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -76,6 +77,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import core.FileNameUtils;
 import core.RegExp;
 import core.WebDocument;
+import core.WebResource;
 import hclient.cache.ClientCache;
 import hclient.cookies.CustomCookieStore;
 import hclient.json.SerializedCookie;
@@ -295,10 +297,6 @@ public class HTTPClient {
 			} catch (URISyntaxException e) {
 				throw new IOException(e.getMessage(), e);
 			}
-	    	if (uURL.getHost().contains("nzbindex.nl")) {
-	    		// hack for https://issues.apache.org/jira/browse/HTTPCLIENT-1550
-	    		httpget.setHeader("Accept-Encoding", "gzip");
-	    	}
 	    	
 	    	HttpContext context = new BasicHttpContext();
 
@@ -311,7 +309,14 @@ public class HTTPClient {
 			try {
 				HttpEntity entity = response.getEntity();
 	
-				ContentType ct = ContentType.getOrDefault( entity );
+				String mimeType = null;
+				Charset charSet = null;
+				try {
+					ContentType ct = ContentType.getOrDefault( entity );
+					mimeType = ct.getMimeType();
+					charSet = ct.getCharset();
+				} catch (UnsupportedCharsetException e) {
+				}
 	
 				String fileName = null;
 				Header contentDisposition = response.getLastHeader("Content-Disposition");
@@ -332,7 +337,7 @@ public class HTTPClient {
 				}
 						
 				int statusCode = response.getStatusLine().getStatusCode();
-				cachedContent = new SimpleResponse( url, statusCode, EntityUtils.toByteArray(entity), fileName, ct.getMimeType(), ct.getCharset() );
+				cachedContent = new SimpleResponse( url, statusCode, EntityUtils.toByteArray(entity), fileName, mimeType, charSet );
 	
 				cachedContent.setRedirectLocations( (RedirectLocations) context.getAttribute( DefaultRedirectStrategy.REDIRECT_LOCATIONS) );
 				
@@ -372,8 +377,8 @@ public class HTTPClient {
     	return download( url, referer, destinationFolder, 0 );
     }
    
-    public String downloadToFile( String url, String referer, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
-		SimpleResponse response = get( url, referer, cacheRefreshPeriod );
+    public String downloadToFile( WebResource resource, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
+		SimpleResponse response = get( resource.getUrl(), resource.getReferer(), cacheRefreshPeriod );
 		createFile(response, destinationFile);
 		return response.getContentType();
     }
