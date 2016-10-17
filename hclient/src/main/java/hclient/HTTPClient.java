@@ -2,9 +2,9 @@ package hclient;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -418,16 +419,12 @@ public class HTTPClient {
 		
 		return createFile(response, destinationFile);
     }
-
-    public boolean downloadImage( URL url, File destinationFile ) throws IOException {
-    	return downloadImage(url, destinationFile, 0);
-    }
     
-    public boolean downloadImage( URL url, File destinationFile, int minimumSize ) throws IOException {
+    public boolean downloadImage( String url, String referer, Path destinationFile ) throws IOException {
     	    	
 		HttpGet httpget;
 		try {
-			httpget = RequestFactory.getGet( url, null );
+			httpget = RequestFactory.getGet( new URL(url), referer );
 		} catch (URISyntaxException e) {
 			throw new IOException(e.getMessage(), e);
 		}
@@ -436,7 +433,7 @@ public class HTTPClient {
 		
 		long contentLength = entity.getContentLength();
 		
-		if (contentLength != -1 && contentLength < minimumSize) {
+		if (contentLength != -1) {
 			EntityUtils.consume(entity);
 			return false;
 		}
@@ -444,13 +441,13 @@ public class HTTPClient {
 		String contentType = entity.getContentType().getValue();
 		if (contentType.startsWith("image/")) {
 			
-			FileOutputStream output = new FileOutputStream( destinationFile );
-			byte[] bytes = EntityUtils.toByteArray( entity );
-			output.write( bytes );
-			output.close();
+			try (OutputStream output = Files.newOutputStream( destinationFile, StandardOpenOption.CREATE)) {
+				byte[] bytes = EntityUtils.toByteArray( entity );
+				output.write( bytes );
+			}
 			
-			if (destinationFile.length() < contentLength) {
-				destinationFile.delete();
+			if (Files.size(destinationFile) < contentLength) {
+				Files.delete(destinationFile);
 			}
 			
 			return true;
