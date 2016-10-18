@@ -76,6 +76,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import core.FileNameUtils;
 import core.RegExp;
 import core.WebDocument;
+import core.WebResource;
 import hclient.cache.ClientCache;
 import hclient.cookies.CustomCookieStore;
 import hclient.json.SerializedCookie;
@@ -371,6 +372,10 @@ public class HTTPClient {
     public Path download( String url, String referer, Path destinationFolder ) throws IOException {
     	return download( url, referer, destinationFolder, 0 );
     }
+    
+    public String downloadToFile( WebResource resource, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
+		return downloadToFile(resource.getUrl(), resource.getReferer(), destinationFile, cacheRefreshPeriod);
+    }    
    
     public String downloadToFile( String url, String referer, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
 		SimpleResponse response = get( url, referer, cacheRefreshPeriod );
