@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
@@ -12,10 +13,12 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -279,144 +282,11 @@ public class HTTPClient {
     	SimpleResponse response = get( url, referer, cacheRefreshPeriod );
     	return new ByteArrayInputStream( response.getByteContents() );
     }
-    
-    public SimpleResponse get( String url, String referer, long cacheRefreshPeriod ) throws IOException {
-
-		SimpleResponse cachedContent = null;
-		if (cacheRefreshPeriod > 0) {
-			cachedContent = (SimpleResponse) cache.getFromCache(url);
-		}
-		if (cachedContent == null) {
-	        // Get the value
-	
-			URL uURL = new URL( url );
-	    	HttpGet httpget;
-			try {
-				httpget = RequestFactory.getGet( uURL, referer );
-			} catch (URISyntaxException e) {
-				throw new IOException(e.getMessage(), e);
-			}
-	    	if (uURL.getHost().contains("nzbindex.nl")) {
-	    		// hack for https://issues.apache.org/jira/browse/HTTPCLIENT-1550
-	    		httpget.setHeader("Accept-Encoding", "gzip");
-	    	}
-	    	
-	    	HttpContext context = new BasicHttpContext();
-
-	    	if (httpget == null) {
-	    		LOGGER.error(String.format("Request null for URL %s", url.toString()));
-	    		return null;
-	    	}
-
-			HttpResponse response = apacheClient.execute( httpget, context );
-			try {
-				HttpEntity entity = response.getEntity();
-	
-				ContentType ct = ContentType.getOrDefault( entity );
-	
-				String fileName = null;
-				Header contentDisposition = response.getLastHeader("Content-Disposition");
-				if (contentDisposition != null) {
-					List<String> groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=\"(.*)\"");
-					if (groups == null) {
-						groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=(.*)");
-					}
-					if (groups != null && groups.size() > 0) {
-						fileName = groups.get(0);
-					} else {
-						LOGGER.error("Unsupported Content-Disposition format : {}", contentDisposition.getValue());
-					}
-				}
-				
-				if (fileName == null) {
-					fileName = FileNameUtils.sanitizeFileName( url.substring( url.lastIndexOf('/') + 1) );
-				}
-						
-				int statusCode = response.getStatusLine().getStatusCode();
-				cachedContent = new SimpleResponse( url, statusCode, EntityUtils.toByteArray(entity), fileName, ct.getMimeType(), ct.getCharset() );
-	
-				cachedContent.setRedirectLocations( (RedirectLocations) context.getAttribute( DefaultRedirectStrategy.REDIRECT_LOCATIONS) );
-				
-				if ( statusCode == 200 ) {
-					cache.putInCache( url, cachedContent, cacheRefreshPeriod );
-				}
-			} finally {
-				httpget.releaseConnection();
-			}
-		}
-		
-		return cachedContent;
-
-    }
-    
-    public SimpleResponse get( String url ) throws IOException {
-    	return get( url, null, 0 );
-    }
-   
-    public SimpleResponse get( String url, long cacheRefreshPeriod ) throws IOException {
-    	return get( url, null, cacheRefreshPeriod );
-    }
-    
-    public SimpleResponse get( String url, String referer ) throws IOException {
-    	return get( url, referer, 0 );
-    }
-     
-    public Path download( String url ) throws IOException {
-    	return download( url, null, null );
-    }
-       
-    public Path download( String url, String referer ) throws IOException {
-    	return download(url, referer, null);
-    }
-
-    public Path download( String url, String referer, Path destinationFolder ) throws IOException {
-    	return download( url, referer, destinationFolder, 0 );
-    }
-    
-    public String downloadToFile( WebResource resource, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
-		return downloadToFile(resource.getUrl(), resource.getReferer(), destinationFile, cacheRefreshPeriod);
-    }    
    
     public String downloadToFile( String url, String referer, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
 		SimpleResponse response = get( url, referer, cacheRefreshPeriod );
 		createFile(response, destinationFile);
 		return response.getContentType();
-    }
-
-	private Path createFile(SimpleResponse response, Path destinationFile) throws IOException {
-		Files.createDirectories( destinationFile.getParent() );
-		try (InputStream input = response.newStream()) {
-			Files.copy( input, destinationFile, StandardCopyOption.REPLACE_EXISTING);
-		}
-        return destinationFile;
-	}
-
-    public Path download( String url, String referer, Path destinationFolder, long cacheRefreshPeriod ) throws IOException {
-
-		String fileName = FileNameUtils.sanitizeFileName( url.substring( url.lastIndexOf('/') + 1) );
-
-		if (destinationFolder == null) {
-			destinationFolder = Files.createTempDirectory("httpclient");
-		}
-		
-		SimpleResponse response = get( url, referer, cacheRefreshPeriod );
-		
-		if (response.getCode() == 404) {
-			return null;
-		}
-		
-		Path destinationFile = null;
-		if (!StringUtils.isEmpty( response.getFileName() )) {
-			destinationFile = destinationFolder.resolve( response.getFileName() );
-		} else {
-			if (StringUtils.isEmpty( fileName )) {
-				destinationFile = Files.createTempFile( destinationFolder, "", "" );
-			} else {
-				destinationFile = destinationFolder.resolve( fileName );
-			}
-		}
-		
-		return createFile(response, destinationFile);
     }
 
     public boolean downloadImage( URL url, File destinationFile ) throws IOException {
@@ -641,4 +511,182 @@ public class HTTPClient {
 		cache.removeCache( url );
 	}
 
+    public SimpleResponse get( String url, String referer, long cacheRefreshPeriod ) throws IOException {
+
+		SimpleResponse cachedContent = null;
+		if (cacheRefreshPeriod > 0) {
+			cachedContent = (SimpleResponse) cache.getFromCache(url);
+		}
+		if (cachedContent == null) {
+	        // Get the value
+	
+			URL uURL = new URL( url );
+	    	HttpGet httpget;
+			try {
+				httpget = RequestFactory.getGet( uURL, referer );
+			} catch (URISyntaxException e) {
+				throw new IOException(e.getMessage(), e);
+			}
+	    	
+	    	HttpContext context = new BasicHttpContext();
+
+	    	if (httpget == null) {
+	    		LOGGER.error(String.format("Request null for URL %s", url.toString()));
+	    		return null;
+	    	}
+
+			HttpResponse response = apacheClient.execute( httpget, context );
+			try {
+				HttpEntity entity = response.getEntity();
+	
+				String mimeType = null;
+				Charset charSet = null;
+				try {
+					ContentType ct = ContentType.getOrDefault( entity );
+					mimeType = ct.getMimeType();
+					charSet = ct.getCharset();
+				} catch (UnsupportedCharsetException e) {
+				}
+	
+				String fileName = null;
+				Header contentDisposition = response.getLastHeader("Content-Disposition");
+				if (contentDisposition != null && StringUtils.isNotBlank(contentDisposition.getValue())) {
+					List<String> groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=\"(.*)\"");
+					if (groups == null) {
+						groups = RegExpMatcher.groups( contentDisposition.getValue(), ".*filename\\*?=(.*)");
+					}
+					if (groups != null && groups.size() > 0) {
+						fileName = groups.get(0);
+					} else {
+						LOGGER.error("Unsupported Content-Disposition format : {}", contentDisposition.getValue());
+					}
+				}
+				
+				if (fileName == null) {
+					fileName = FileNameUtils.sanitizeFileName( url.substring( url.lastIndexOf('/') + 1) );
+				}
+						
+				int statusCode = response.getStatusLine().getStatusCode();
+				cachedContent = new SimpleResponse( url, statusCode, EntityUtils.toByteArray(entity), fileName, mimeType, charSet );
+	
+				cachedContent.setRedirectLocations( (RedirectLocations) context.getAttribute( DefaultRedirectStrategy.REDIRECT_LOCATIONS) );
+				
+				if ( statusCode == 200 ) {
+					cache.putInCache( url, cachedContent, cacheRefreshPeriod );
+				}
+			} finally {
+				httpget.releaseConnection();
+			}
+		}
+		
+		return cachedContent;
+
+    }
+    
+    public SimpleResponse get( String url ) throws IOException {
+    	return get( url, null, 0 );
+    }
+   
+    public SimpleResponse get( String url, long cacheRefreshPeriod ) throws IOException {
+    	return get( url, null, cacheRefreshPeriod );
+    }
+    
+    public SimpleResponse get( String url, String referer ) throws IOException {
+    	return get( url, referer, 0 );
+    }
+     
+    public Path download( String url ) throws IOException {
+    	return download( url, null, null );
+    }
+       
+    public Path download( String url, String referer ) throws IOException {
+    	return download(url, referer, null);
+    }
+
+    public Path download( String url, String referer, Path destinationFolder ) throws IOException {
+    	return download( url, referer, destinationFolder, 0 );
+    }
+   
+    public String downloadToFile( WebResource resource, Path destinationFile, long cacheRefreshPeriod ) throws IOException {
+		SimpleResponse response = get( resource.getUrl(), resource.getReferer(), cacheRefreshPeriod );
+		createFile(response, destinationFile);
+		return response.getContentType();
+    }
+
+	private Path createFile(SimpleResponse response, Path destinationFile) throws IOException {
+		Files.createDirectories( destinationFile.getParent() );
+		try (InputStream input = response.newStream()) {
+			Files.copy( input, destinationFile, StandardCopyOption.REPLACE_EXISTING);
+		}
+        return destinationFile;
+	}
+
+    public Path download( String url, String referer, Path destinationFolder, long cacheRefreshPeriod ) throws IOException {
+
+		String fileName = FileNameUtils.sanitizeFileName( url.substring( url.lastIndexOf('/') + 1) );
+
+		if (destinationFolder == null) {
+			destinationFolder = Files.createTempDirectory("httpclient");
+		}
+		
+		SimpleResponse response = get( url, referer, cacheRefreshPeriod );
+		
+		if (response.getCode() == 404) {
+			return null;
+		}
+		
+		Path destinationFile = null;
+		if (!StringUtils.isEmpty( response.getFileName() )) {
+			destinationFile = destinationFolder.resolve( response.getFileName() );
+		} else {
+			if (StringUtils.isEmpty( fileName )) {
+				destinationFile = Files.createTempFile( destinationFolder, "", "" );
+			} else {
+				destinationFile = destinationFolder.resolve( fileName );
+			}
+		}
+		
+		return createFile(response, destinationFile);
+    }
+    
+    public boolean downloadImage( String url, String referer, Path destinationFile ) throws IOException {
+    	    	
+		HttpGet httpget;
+		try {
+			httpget = RequestFactory.getGet( new URL(url), referer );
+		} catch (URISyntaxException e) {
+			throw new IOException(e.getMessage(), e);
+		}
+		HttpResponse response = apacheClient.execute(httpget);
+		HttpEntity entity = response.getEntity();
+		
+		long contentLength = entity.getContentLength();
+		
+		if (contentLength != -1) {
+			EntityUtils.consume(entity);
+			return false;
+		}
+		
+		String contentType = entity.getContentType().getValue();
+		if (contentType.startsWith("image/")) {
+			
+			try (OutputStream output = Files.newOutputStream( destinationFile, StandardOpenOption.CREATE)) {
+				byte[] bytes = EntityUtils.toByteArray( entity );
+				output.write( bytes );
+			}
+			
+			if (Files.size(destinationFile) < contentLength) {
+				Files.delete(destinationFile);
+			}
+			
+			return true;
+		} else {
+			EntityUtils.consume(entity);
+		}
+		
+		return false;
+    }
+
+
 }
+
