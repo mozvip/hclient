@@ -662,7 +662,7 @@ public class HTTPClient {
 		
 		long contentLength = entity.getContentLength();
 		
-		if (contentLength != -1) {
+		if (contentLength <= 0) {
 			EntityUtils.consume(entity);
 			return false;
 		}
