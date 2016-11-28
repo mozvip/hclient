@@ -662,7 +662,7 @@ public class HTTPClient {
 		
 		long contentLength = entity.getContentLength();
 		
-		if (contentLength != -1) {
+		if (contentLength <= 0) {
 			EntityUtils.consume(entity);
 			return false;
 		}
@@ -670,6 +670,7 @@ public class HTTPClient {
 		String contentType = entity.getContentType().getValue();
 		if (contentType.startsWith("image/")) {
 			
+			Files.createDirectories( destinationFile.getParent() );
 			try (OutputStream output = Files.newOutputStream( destinationFile, StandardOpenOption.CREATE)) {
 				byte[] bytes = EntityUtils.toByteArray( entity );
 				output.write( bytes );
