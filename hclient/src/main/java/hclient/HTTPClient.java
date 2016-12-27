@@ -475,17 +475,9 @@ public class HTTPClient {
 		String method = jsoupFormElement.attr("method");
 		SimpleResponse response = null;
 		
-		String action = jsoupFormElement.attr("action");
+		String submitURL = jsoupFormElement.absUrl("action");
 		
 		if ( StringUtils.equalsIgnoreCase(method, "POST")) {
-			String submitURL = url;
-			if (action != null) {
-				if (action.startsWith("/")) {
-					submitURL = url + action;
-				} else {
-					submitURL = url.substring(0, url.lastIndexOf('/') + 1) + action;
-				}
-			}
 			response = post( submitURL, url, paramsMap, false );
 		} else {
 			// TODO
