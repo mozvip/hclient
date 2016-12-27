@@ -33,7 +33,7 @@ public class RegExp {
 			for (String regExp : extractionRegexps) {
 				String[] groups = RegExp.parseGroups(cleanName, regExp);
 				if (groups != null) {
-					cleanName = groups[0];
+					cleanName = groups[0].trim();
 					anotherPass = true;
 					continue;
 				}
@@ -41,7 +41,7 @@ public class RegExp {
 			anotherPass = false;
 		}
 
-		return cleanName.trim();
+		return cleanName;
 	}
 	
 	public static String[] parseGroups( String text, String regex ) {
