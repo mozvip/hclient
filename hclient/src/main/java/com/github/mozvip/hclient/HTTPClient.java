@@ -1,4 +1,4 @@
-package hclient;
+package com.github.mozvip.hclient;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -75,14 +75,13 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import core.FileNameUtils;
-import core.RegExp;
-import core.WebDocument;
-import core.WebResource;
-import hclient.cache.ClientCache;
-import hclient.cookies.CustomCookieStore;
-import hclient.json.SerializedCookie;
+import com.github.mozvip.hclient.cache.ClientCache;
+import com.github.mozvip.hclient.cookies.CustomCookieStore;
+import com.github.mozvip.hclient.core.FileNameUtils;
+import com.github.mozvip.hclient.core.RegExp;
+import com.github.mozvip.hclient.core.WebDocument;
+import com.github.mozvip.hclient.core.WebResource;
+import com.github.mozvip.hclient.json.SerializedCookie;
 
 public class HTTPClient {
 	
