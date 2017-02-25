@@ -1,2 +1,3 @@
-hclient/httpclient-cache.mv.db
-hclient/cookies.json
+/httpclient-cache.mv.db
+/cookies.json
+/target
