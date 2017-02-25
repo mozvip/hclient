@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.http.annotation.GuardedBy;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.cookie.CookieIdentityComparator;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -17,7 +16,6 @@ public class CustomCookieStore extends BasicCookieStore {
 
 	private static final long serialVersionUID = -7581093305228232025L;
 
-	@GuardedBy("this")
 	private final TreeSet<Cookie> cookies;
 	
 	private Set<String> nonExpiringDomains = new HashSet<>();
