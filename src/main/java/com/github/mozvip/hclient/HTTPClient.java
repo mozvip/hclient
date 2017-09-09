@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -387,13 +388,11 @@ public class HTTPClient {
     	}
     }
     
-    public String getCookie( String domain ) {
-    	for (Cookie cookie : cookieStore.getCookies()) {
-			if (StringUtils.equals(cookie.getDomain(), domain)) {
-				return cookie.getName() + "=" + cookie.getValue();
-			}
-		}
-    	return null;
+    public List<Cookie> getCookies( String domain ) {
+    	return cookieStore.getCookies().stream()
+    			.filter(cookie -> cookie.getDomain().equals(domain))
+    			.collect( Collectors.toList()
+    		);
     }
     
 	public CookieStore getCookieStore() {

@@ -40,6 +40,10 @@ public class SimpleResponse implements Serializable {
 		this.contentType = contentType;
 		this.fileName = fileName;
 	}
+	
+	public String getUrl() {
+		return url;
+	}
 
 	public int getCode() {
 		return code;
